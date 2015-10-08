@@ -5,15 +5,21 @@
     <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no, width=device-width">
     <title></title>
 
+    <style>
+      .angular-google-map-container {
+          width: 100%;
+          height: 504px;
+      }
+    </style>
+
     <link href="lib/ionic/css/ionic.css" rel="stylesheet">
-    <link href="css/style.css" rel="stylesheet">
+    <script src="lib/ionic/js/ionic.bundle.js"></script>
+
+    <link href="http://code.ionicframework.com/ionicons/1.5.2/css/ionicons.min.css" rel="stylesheet">
 
     <!-- IF using Sass (run gulp sass first), then uncomment below and remove the CSS includes above
     <link href="css/ionic.app.css" rel="stylesheet">
     -->
-
-    <!-- ionic/angularjs js -->
-    <script src="lib/ionic/js/ionic.bundle.js"></script>
     <script src="https://rawgit.com/gdi2290/angular-websocket/v1.0.9/angular-websocket.js"></script>
     <script src="lib/ngCordova/dist/ng-cordova.js"></script>
     <script src="lib/ionic-service-core/ionic-core.js"></script>
@@ -21,26 +27,325 @@
     <script src="lib/ionic-service-deploy/ionic-deploy.js"></script>
     <script src="lib/ionic-service-analytics/ionic-analytics.js"></script>
 
-    <!-- cordova script (this will be a 404 during development) -->
-    <!-- <script src="cordova.js"></script> -->
+    <script>
+// Ionic Starter App
 
-    <!-- your app's js -->
-    <script src="js/app.js"></script>
-    <script src="js/controllers.js"></script>
+// angular.module is a global place for creating, registering and retrieving Angular modules
+// 'starter' is the name of this angular module example (also set in a <body> attribute in index.html)
+// the 2nd parameter is an array of 'requires'
+// 'starter.services' is found in services.js
+// 'starter.controllers' is found in controllers.js
+angular.module('app', ['ionic',
+  'ngCordova',
+  'ionic.service.core',
+  'ionic.service.push',
+  'ionic.service.deploy'])
+
+.run(function($ionicPlatform) {
+  $ionicPlatform.ready(function() {
+    // Hide the accessory bar by default (remove this to show the accessory bar above the keyboard
+    // for form inputs)
+    if(window.cordova && window.cordova.plugins.Keyboard) {
+      cordova.plugins.Keyboard.hideKeyboardAccessoryBar(true);
+    }
+    if(window.StatusBar) {
+      // org.apache.cordova.statusbar required
+      StatusBar.styleDefault();
+    }
+  });
+})
+
+.config(function($stateProvider, $urlRouterProvider) {
+
+  // Ionic uses AngularUI Router which uses the concept of states
+  // Learn more here: https://github.com/angular-ui/ui-router
+  // Set up the various states which the app can be in.
+  // Each state's controller can be found in controllers.js
+  $stateProvider
+    
+    .state('page1', {
+      url: '/page1',
+      templateUrl: 'page1.html'
+    })
+    
+    .state('page2', {
+      url: '/login',
+      templateUrl: 'page2.html'
+    })
+    
+    .state('page3', {
+      url: '/page3',
+      templateUrl: 'page3.html'
+    })
+    
+    .state('page5', {
+      url: '/page5',
+      templateUrl: 'page5.html'
+    })
+    
+    .state('page6', {
+      url: '/page6',
+      templateUrl: 'page6.html'
+    })
+
+    .state('page7', {
+      url: '/page7',
+      templateUrl: 'page7.html'
+    })
+
+      // Scanner tab
+  .state('scan', {
+    url: '/scan',
+      templateUrl: 'templates/tab-home.html',
+      controller: 'ScanController as vm'
+    
+  });
+
+  // if none of the above states are matched, use this as the fallback
+  
+  $urlRouterProvider.otherwise('/page1');
+  
+
+})
+
+.service('scoreKeeperService', function() {
+    
+         var score = 23;
+         
+         this.getScore = function() {return score;};
+         
+         //increments current score and returns new score
+         this.incrementScore = function() {
+            score++;
+            return score;
+         };
+
+})
+
+.service('infoService', function() {
+         
+         var info = {
+            "digi-ATABLE" : {
+                "name": "A table",
+                "description": "This is a table"
+            },
+           "digi-ACHAIR" : {
+           "name" : "A chair",
+           "description": "This is a chair"
+           }
+         };
+         
+         this.getInfo = function(infoId) {
+         return info[infoId];
+         }
+         
+         })
+
+    .controller('ScanController', function($scope, $rootScope, $cordovaBarcodeScanner, $ionicPlatform, scoreKeeperService, infoService, $ionicModal) {
+        var vm = this;
+                
+                vm.score = scoreKeeperService.getScore();
+                vm.hasInfo = false;
+                
+                $ionicModal.fromTemplateUrl('templates/form-modal.html', {
+                                            scope: $scope,
+                                            animation: 'slide-in-up'
+                                            }).then(function(modal) {
+                vm.modal = modal;
+                });
+                
+                vm.openForm = function(){
+                vm.modal.show();
+                };
+                
+                vm.closeForm = function() {
+                vm.modal.hide();
+                }
+
+        vm.scan = function(){
+            $ionicPlatform.ready(function() {
+                $cordovaBarcodeScanner
+                    .scan()
+                    .then(function(result) {
+                          
+                          //increment score
+                          vm.score = scoreKeeperService.incrementScore();
+                          
+                          var qr_str = result.text;
+                          
+                          if (qr_str === 'digi-FORM') {
+                          vm.hasInfo = false;
+                          vm.openForm();
+                          
+                          } else {
+                          var infoObj = infoService.getInfo(qr_str);
+                          
+                          if (infoObj) {
+                          vm.hasInfo = true;
+                          vm.result = infoObj;
+                          }
+                          }
+                          
+                          
+                          
+                        // Success! Barcode data is here
+                        /*vm.scanResults = "We got a barcode\n" +
+                        "Result: " + result.text + "\n" +
+                        "Format: " + result.format + "\n" +
+                        "Cancelled: " + result.cancelled;*/
+                    }, function(error) {
+                        // An error occurred
+                        vm.scanResults = 'Error: ' + error;
+                    });
+            });
+        };
+
+        vm.scanResults = '';
+    });
+
+
+    </script>
   </head>
-  <body ng-app="scanner">
-    <!--
-      The nav bar that will be updated as we navigate between views.
-    -->
-    <ion-nav-bar class="bar-dark">
-      <ion-nav-back-button>
-      </ion-nav-back-button>
-    </ion-nav-bar>
-    <!--
-      The views will be rendered in the <ion-nav-view> directive below
-      Templates are in the /templates folder (but you could also
-      have templates inline in this html file if you'd like).
-    -->
-    <ion-nav-view></ion-nav-view>
+  <body ng-app="app" animation="slide-left-right-ios7">
+  <div>
+    <div>
+        <ion-nav-bar class="bar-stable">
+            <ion-nav-back-button class="button-icon icon ion-ios7-arrow-back">Back</ion-nav-back-button>
+        </ion-nav-bar>
+        <ion-nav-view></ion-nav-view>
+    </div>
+</div>
+<script id="page1.html" type="text/ng-template">
+<ion-view title="Landing Page">
+    <ion-content padding="true" class="has-header">
+        <div class="button-bar"></div>
+        <label class="item item-input">
+            <span class="input-label">DigiDigiCAT</span><textarea placeholder=""> Join the virtual Digital Catapult community</textarea>
+        </label>
+        <div style="line-height: 250px; border: 1px solid rgb(238, 238, 238); border-radius: 3px; text-align: center; width: 100%; height: auto; background-color: rgb(255, 255, 255);">
+            <i class="icon ion-image" style="font-size: 64px; color: rgb(136, 136, 136); vertical-align: middle;"></i>
+        </div>
+        <button class="button button-stable button-block " ui-sref="page2">Tap me!</button>
+    </ion-content>
+</ion-view></script>
+<script id="page2.html" type="text/ng-template">
+<ion-view title="Login">
+    <ion-content padding="true" class="has-header">
+        <label class="item item-input">
+            <span class="input-label">DigiDigitCat</span><textarea placeholder=""> Your personal digital Digital Catapult </textarea>
+        </label>
+        <form>
+            <ion-list>
+                <label class="item item-input">
+                    <span class="input-label">Jamie Harrison</span>
+                    <input type="text" placeholder="">
+                </label>
+                <label class="item item-input">
+                    <span class="input-label">*****************</span>
+                    <input type="password" placeholder="">
+                </label>
+            </ion-list>
+            <div class="spacer" style="height: 40px;"></div>
+            <button class="button button-stable button-block " ui-sref="page3">Log in</button>
+            <a href="#/signup" class="button button-positive button-clear button-block ">Or create an account</a>
+        </form>
+    </ion-content>
+</ion-view></script>
+<script id="page3.html" type="text/ng-template">
+<ion-view title="Personal Page 1">
+    <ion-content padding="true" class="has-header">
+
+    <button ui-sref="scan">
+      Scan QR Code
+    </button>
+        <div class="button-bar">
+            <button class="button button-positive button-outline" ui-sref="page5">What's on now</button>
+            <button class="button button-positive button-outline" ui-sref="page6">Who's here now</button>
+        </div>
+        <label class="item item-input">
+            <span class="input-label">You might be interested in:</span><textarea placeholder=""> </textarea>
+        </label>
+        <div style="line-height: 250px; border: 1px solid rgb(238, 238, 238); border-radius: 3px; text-align: center; width: 100%; height: auto; background-color: rgb(255, 255, 255);">
+            <i class="icon ion-image" style="font-size: 64px; color: rgb(136, 136, 136); vertical-align: middle;"></i>
+        </div>
+        <label class="item item-input">
+            <span class="input-label">Twitter #digidigicat</span><textarea placeholder=""> </textarea>
+        </label>
+        <label class="item item-input">
+            <span class="input-label">News</span><textarea placeholder=""> </textarea>
+        </label>
+        <label class="item item-input">
+            <span class="input-label">People</span><textarea placeholder=""> </textarea>
+        </label>
+        <label class="item item-input">
+            <span class="input-label">Events</span><textarea placeholder=""> </textarea>
+        </label>
+    </ion-content>
+</ion-view></script>
+<script id="page7.html" type="text/ng-template">
+<ion-view title="Personal Page 2">
+    <ion-content padding="true" class="has-header">
+        <div class="button-bar">
+            <button class="button button-positive button-outline" ui-sref="page5">What's on now</button>
+            <button class="button button-positive button-outline" ui-sref="page6">Who's here now</button>
+        </div>
+        <label class="item item-input">
+            <span class="input-label">You might be interested in:</span><textarea placeholder=""> </textarea>
+        </label>
+        <div style="line-height: 250px; border: 1px solid rgb(238, 238, 238); border-radius: 3px; text-align: center; width: 100%; height: auto; background-color: rgb(255, 255, 255);">
+            <i class="icon ion-image" style="font-size: 64px; color: rgb(136, 136, 136); vertical-align: middle;"></i>
+        </div>
+        <label class="item item-input">
+            <span class="input-label">Twitter #digidigicat</span><textarea placeholder=""> </textarea>
+        </label>
+        <label class="item item-input">
+            <span class="input-label">News</span><textarea placeholder=""> Other news</textarea>
+        </label>
+        <label class="item item-input">
+            <span class="input-label">People</span><textarea placeholder=""> </textarea>
+        </label>
+        <label class="item item-input">
+            <span class="input-label">Events</span><textarea placeholder=""> </textarea>
+        </label>
+    </ion-content>
+</ion-view></script>
+
+
+
+<script id="page5.html" type="text/ng-template">
+<ion-view title="What's on now">
+    <ion-content padding="true" class="has-header">
+        <div class="button-bar">
+            <button class="button button-stable button-block ">Agenda</button>
+            <button class="button button-stable button-block ">Speaker Bios</button>
+            <button class="button button-stable button-block ">Downloads</button>
+        </div>
+        <label class="item item-input">
+            <span class="input-label">Google Search</span><textarea placeholder=""> </textarea>
+        </label>
+        <label class="item item-input">
+            <span class="input-label">Live Tweets</span><textarea placeholder=""> </textarea>
+        </label>
+        <label class="item item-input">
+            <span class="input-label">Background Info (Blogs, Articles)</span><textarea placeholder=""> </textarea>
+        </label>
+    </ion-content>
+</ion-view></script>
+<script id="page6.html" type="text/ng-template">
+<ion-view title="Who's here now">
+    <ion-content padding="true" class="has-header">
+        <div class="button-bar">
+            <button class="button button-stable button-block ">Companies</button>
+            <button class="button button-stable button-block ">People</button>
+            <button class="button button-stable button-block ">Interests</button>
+        </div>
+        <div style="line-height: 250px; border: 1px solid rgb(238, 238, 238); border-radius: 3px; text-align: center; width: 100%; height: auto; background-color: rgb(255, 255, 255);">
+            <i class="icon ion-image" style="font-size: 64px; color: rgb(136, 136, 136); vertical-align: middle;"></i>
+        </div>
+        <label class="item item-input">
+            <span class="input-label">Would you like to meet this person?</span><textarea placeholder=""> </textarea>
+        </label>
+    </ion-content>
+</ion-view></script>
   </body>
 </html>
